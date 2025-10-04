@@ -1,0 +1,5 @@
+﻿  VectorLib.vcxproj -> C:\Users\fpm.rogovSA\source\repos\MathSystem\x64\Debug\VectorLib.dll
+  Недопустимый путь
+  Скопировано файлов: 0.
+C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon.targets(161,5): error MSB3073: The command "xcopy /Y /D "C:\Users\fpm.rogovSA\source\repos\MathSystem\x64\Debug\VectorLib.dll" "C:\Users\fpm.rogovSA\source\repos\MathSystem\MainApp\C:\Users\fpm.rogovSA\source\repos\MathSystem\x64\Debug\"
+C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon.targets(161,5): error MSB3073: :VCEnd" exited with code 4.
