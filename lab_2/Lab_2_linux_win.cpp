@@ -236,8 +236,6 @@ void run_winapi(const vector<vector<dbl>>& A, const vector<vector<dbl>>& B,
                     sem.release();
                     throw runtime_error("CreateThread failed");
                 }
-                // create a watcher thread to release semaphore when done
-                // but simpler: create a small thread that waits and releases sem after WaitForSingleObject
                 thread([h,&sem]() {
                     WaitForSingleObject(h, INFINITE);
                     CloseHandle(h);
@@ -247,8 +245,6 @@ void run_winapi(const vector<vector<dbl>>& A, const vector<vector<dbl>>& B,
             }
         }
     }
-    // wait for all (handles were closed by watchers). Give small sleep until likely finished.
-    // Better: busy-wait check (not ideal). Wait a bit.
     this_thread::sleep_for(chrono::milliseconds(100));
     for(auto &cs : crit) DeleteCriticalSection(&cs);
 }

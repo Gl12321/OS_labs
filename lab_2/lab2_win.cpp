@@ -20,7 +20,6 @@ void mul_block(const vector<vector<dbl>> &A, const vector<vector<dbl>> &B,
                 C[ai + i][bj + j] += A[ai + i][aj + k] * B[bi + k][bj + j];
 }
 
-// WinAPI thread
 struct Task {
     const vector<vector<dbl>> *A, *B;
     vector<vector<dbl>> *C;
@@ -55,7 +54,6 @@ void run_winapi(const vector<vector<dbl>> &A, const vector<vector<dbl>> &B,
     }
 }
 
-// std::thread версия
 void run_std_threads(const vector<vector<dbl>> &A, const vector<vector<dbl>> &B,
                      vector<vector<dbl>> &C, int N, int br, int max_threads) {
     int nb = (N + br - 1) / br;
