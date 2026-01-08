@@ -10,34 +10,34 @@
 #include <sys/types.h>
 #include <cstring>
 
+using namespace std;
+
 void killPid(pid_t pid) {
     if (kill(pid, SIGKILL) == 0) {
-        std::cout << "[+] Killed PID: " << pid << std::endl;
+        cout << "Killed PID: " << pid << endl;
     } else {
-        perror("[-] Failed to kill");
+        perror("Failed to kill");
     }
 }
 
 void killByName(const std::string& targetName) {
     DIR* dir = opendir("/proc");
-    if (!dir) return;
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
         if (!isdigit(*entry->d_name)) continue;
 
-        pid_t pid = std::stoi(entry->d_name);
+        pid_t pid = stoi(entry->d_name);
         
-        std::string commPath = std::string("/proc/") + entry->d_name + "/comm";
-        std::ifstream commFile(commPath);
-        std::string procName;
+        string commPath = std::string("/proc/") + entry->d_name + "/comm";
+        ifstream commFile(commPath);
+        string procName;
         
         if (commFile >> procName) {
             if (procName == targetName) {
-                // Не убиваем сами себя
                 if (pid == getpid()) continue;
                 
-                std::cout << "[*] Found '" << targetName << "' at PID " << pid << std::endl;
+                cout << "Found" << targetName << "' at PID " << pid << std::endl;
                 killPid(pid);
             }
         }
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     checkEnv();
 
     for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
+        string arg = argv[i];
         if (arg == "--id") {
             if (i + 1 < argc) {
                 killPid(std::stoi(argv[++i]));
