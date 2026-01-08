@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include <pthread.h>
+#include <windows.h>
 using namespace std;
 using hrclock = chrono::high_resolution_clock;
 using dbl = double;
@@ -25,30 +25,33 @@ struct Task {
     vector<vector<dbl>> *C;
     int N, br, ai, aj, bi, bj;
 };
-void *thread_func(void *arg) {
+DWORD WINAPI worker(LPVOID arg) {
     Task *t = (Task *)arg;
     mul_block(*t->A, *t->B, *t->C, t->N, t->ai, t->aj, t->bi, t->bj, t->br);
     delete t;
-    return nullptr;
+    return 0;
 }
 
-void run_pthreads(const vector<vector<dbl>> &A, const vector<vector<dbl>> &B,
-                  vector<vector<dbl>> &C, int N, int br, int max_threads) {
+void run_winapi(const vector<vector<dbl>> &A, const vector<vector<dbl>> &B,
+                vector<vector<dbl>> &C, int N, int br, int max_threads) {
     int nb = (N + br - 1) / br;
-    vector<pthread_t> th;
+    vector<HANDLE> handles;
     for (int bi = 0; bi < nb; bi++)
         for (int bj = 0; bj < nb; bj++)
             for (int bk = 0; bk < nb; bk++) {
                 Task *t = new Task{&A, &B, &C, N, br, bi * br, bk * br, bk * br, bj * br};
-                pthread_t id;
-                pthread_create(&id, nullptr, thread_func, t);
-                th.push_back(id);
-                if ((int)th.size() >= max_threads) {
-                    for (auto &tid : th) pthread_join(tid, nullptr);
-                    th.clear();
+                HANDLE h = CreateThread(nullptr, 0, worker, t, 0, nullptr);
+                handles.push_back(h);
+                if ((int)handles.size() >= max_threads) {
+                    WaitForMultipleObjects((DWORD)handles.size(), handles.data(), TRUE, INFINITE);
+                    for (auto &x : handles) CloseHandle(x);
+                    handles.clear();
                 }
             }
-    for (auto &tid : th) pthread_join(tid, nullptr);
+    if (!handles.empty()) {
+        WaitForMultipleObjects((DWORD)handles.size(), handles.data(), TRUE, INFINITE);
+        for (auto &x : handles) CloseHandle(x);
+    }
 }
 
 void run_std_threads(const vector<vector<dbl>> &A, const vector<vector<dbl>> &B,
@@ -98,6 +101,7 @@ int main() {
 
     C.assign(N, vector<dbl>(N, 0));
     t0 = hrclock::now();
-    run_pthreads(A, B, C, N, br, max_threads);
-    cout << "pthread time: " << chrono::duration<double, milli>(hrclock::now() - t0).count() << " ms\n";
+    run_winapi(A, B, C, N, br, max_threads);
+    cout << "WinAPI time: " << chrono::duration<double, milli>(hrclock::now() - t0).count() << " ms\n";
 }
+
