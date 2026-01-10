@@ -2,88 +2,80 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <vector>
-#include <sstream>
+#include <string>
 
-const int N = 19;
+using namespace std;
 
-void worker_M() { 
-    long long x;
-    while (std::cin >> x) std::cout << (x * 7) << " ";
+void run_worker(char type) {
+    if (type == 'M') {
+        long long x;
+        while (cin >> x) { cout << (x * 7) << " "; cout.flush(); }
+    } else if (type == 'A') {
+        long long x;
+        while (cin >> x) { cout << (x + 19) << " "; cout.flush(); }
+    } else if (type == 'P') {
+        long long x;
+        while (cin >> x) { cout << (x * x * x) << " "; cout.flush(); }
+    } else if (type == 'S') {
+        long long sum = 0, x;
+        while (cin >> x) sum += x;
+        cout << sum << endl;
+    }
+    exit(0);
 }
 
-void worker_A() {
-    long long x;
-    while (std::cin >> x) std::cout << (x + N) << " ";
-}
+int main(int argc, char* argv[]) {
+    if (argc > 1) {
+        run_worker(argv[1][0]);
+        return 0;
+    }
 
-void worker_P() { 
-    long long x;
-    while (std::cin >> x) std::cout << (x * x * x) << " ";
-}
-
-void worker_S() { 
-    long long sum = 0, x;
-    while (std::cin >> x) sum += x;
-    std::cout << sum << std::endl;
-}
-
-int main() {
     int start_pipe[2];
+    if (pipe(start_pipe) == -1) return 1;
 
-    std::string input_data = "1 2 3";
+    string input_data = "1 2 3 ";
     write(start_pipe[1], input_data.c_str(), input_data.size());
-    close(start_pipe[1]); 
+    close(start_pipe[1]);
 
     int prev_read_fd = start_pipe[0];
-
-    typedef void (*WorkerFunc)();
-    struct Task { WorkerFunc func; bool is_last; };
-    
-    std::vector<Task> chain = {
-        {worker_M, false},
-        {worker_A, false},
-        {worker_P, false},
-        {worker_S, true} 
-    };
-
+    vector<string> workers = {"M", "A", "P", "S"};
     int final_result_fd = -1;
 
-    for (const auto& task : chain) {
+    char path[1024];
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+    path[len] = '\0';
+
+    for (size_t i = 0; i < workers.size(); ++i) {
         int next_pipe[2];
-        if (pipe(next_pipe) == -1) return 1;
+        pipe(next_pipe);
 
         if (fork() == 0) {
             dup2(prev_read_fd, STDIN_FILENO);
-            close(prev_read_fd);
-
             dup2(next_pipe[1], STDOUT_FILENO);
-            close(next_pipe[1]);
+            close(prev_read_fd);
             close(next_pipe[0]);
+            close(next_pipe[1]);
 
-            task.func();
-            
-            exit(0); 
+            execl(path, path, workers[i].c_str(), nullptr);
+            exit(1);
         }
 
         close(prev_read_fd);
         close(next_pipe[1]);
-
-        if (task.is_last) {
-            final_result_fd = next_pipe[0];
-        } else {
-            prev_read_fd = next_pipe[0];
-        }
+        
+        if (i == workers.size() - 1) final_result_fd = next_pipe[0];
+        else prev_read_fd = next_pipe[0];
     }
 
     char buffer[128];
     ssize_t bytes = read(final_result_fd, buffer, sizeof(buffer) - 1);
     if (bytes > 0) {
         buffer[bytes] = '\0';
-        std::cout << "результат: " << buffer; 
+        cout << "результат: " << buffer;
     }
     close(final_result_fd);
 
-    for (size_t i = 0; i < chain.size(); ++i) wait(nullptr);
+    for (size_t i = 0; i < workers.size(); ++i) wait(nullptr);
 
     return 0;
 }
